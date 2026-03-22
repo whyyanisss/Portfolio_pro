@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yanis Slimani | Systèmes Embarqués</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23000'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='13' letter-spacing='-0.5' fill='white'>YS</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg: #000;
+            --surface: #0a0a0a;
+            --muted: #777;
+            --border: rgba(255,255,255,0.1);
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --c-done: #4ade80;
+            --c-schema: #60a5fa;
+            --transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { background: var(--bg); color: white; font-family: var(--font-main); line-height: 1.6; overflow-x: hidden; cursor: none; }
+
+        /* ── CURSOR ─────────────────────────────────────── */
+        .cursor-ring {
+            position: fixed; top: 0; left: 0; width: 32px; height: 32px;
+            border: 1px solid rgba(255,255,255,0.35); border-radius: 50%;
+            transform: translate(-50%,-50%); pointer-events: none; z-index: 9999;
+            transition: width 0.28s ease, height 0.28s ease, border-color 0.28s ease;
+        }
+        body.cursor-hover .cursor-ring { width: 52px; height: 52px; border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.04); }
+
+        /* ── NAV ─────────────────────────────────────────── */
+        .logo-sticky {
+            position: fixed; top: 2.5rem; left: 4%;
+            font-weight: 800; font-size: 1.15rem; letter-spacing: -0.05em;
+            text-transform: uppercase; z-index: 1100; mix-blend-mode: difference;
+        }
+        nav {
+            position: absolute; top: 0; width: 100%; padding: 2.5rem 4%;
+            display: flex; justify-content: flex-end; z-index: 1000;
+        }
+        .nav-links { display: flex; gap: 2.5rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.18em; font-weight: 600; }
+        .nav-links a { color: #777; text-decoration: none; transition: 0.3s; cursor: none; }
+        .nav-links a:hover { color: white; }
+
+        /* ── HERO ────────────────────────────────────────── */
+        .hero {
+            height: 100vh; display: flex; flex-direction: column;
+            justify-content: flex-end; padding: 0 8% 6rem; position: relative;
+        }
+        .hero-counter {
+            position: absolute; top: 30%; right: 8%;
+            transform: translateY(-50%);
+            text-align: right; user-select: none; pointer-events: none; z-index: -1;
+        }
+        .hero-counter strong {
+            display: block; font-size: clamp(8rem, 22vw, 18rem); font-weight: 900;
+            color: transparent; -webkit-text-stroke: 2px #1a1a1a;
+            letter-spacing: -0.05em; line-height: 1;
+        }
+        .hero-counter span { display: block; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: #2a2a2a; letter-spacing: 0.2em; text-transform: uppercase; line-height: 1.9; margin-top: -6px; }
+        .hero h2 { font-family: var(--font-mono); font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.35em; margin-bottom: 1.2rem; }
+        .hero h1 { font-size: clamp(3.5rem,10vw,9rem); font-weight: 800; line-height: 0.88; letter-spacing: -0.04em; margin-bottom: 2rem; }
+        .hero-sub { display: flex; align-items: flex-end; justify-content: space-between; }
+        .hero p { max-width: 400px; color: var(--muted); font-size: 0.95rem; line-height: 1.8; }
+        .scroll-hint { display: flex; flex-direction: column; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.2em; color: #555; }
+        .scroll-hint-line { width: 1px; height: 40px; background: #2a2a2a; animation: scrollPulse 2s ease-in-out infinite; }
+        @keyframes scrollPulse { 0%,100%{transform:scaleY(1);opacity:0.5;} 50%{transform:scaleY(1.4);opacity:1;} }
+
+        /* ── FILTER BAR ──────────────────────────────────── */
+        .filter-bar {
+            position: sticky; top: 0; z-index: 100;
+            padding: 0 8% 0 15%; display: flex; align-items: center;
+            background: rgba(0,0,0,0.98); border-bottom: 1px solid var(--border);
+        }
+        .filter-btn {
+            background: none; border: none; color: #555;
+            font-family: var(--font-mono); font-size: 0.68rem;
+            text-transform: uppercase; letter-spacing: 0.22em;
+            padding: 1.3rem 0; margin-right: 3rem; cursor: none; transition: color 0.25s; position: relative;
+        }
+        .filter-btn.active { color: white; }
+        .filter-btn.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 1px; background: white; }
+        .filter-count { font-size: 0.6rem; color: #666; margin-left: 0.5rem; vertical-align: super; }
+
+        /* ── GROUPS ──────────────────────────────────────── */
+        .groups-container { position: relative; overflow: hidden; }
+        .project-group {
+            opacity: 0; pointer-events: none;
+            transform: translateY(16px);
+            transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16,1,0.3,1);
+            position: absolute; top: 0; left: 0; width: 100%;
+        }
+        .project-group.visible { opacity: 1; pointer-events: all; transform: translateY(0); position: relative; top: auto; left: auto; }
+        .project-group.exit-left  { opacity: 0; transform: translateX(-40px); }
+        .project-group.exit-right { opacity: 0; transform: translateX(40px); }
+        .project-group.enter-left  { transform: translateX(-40px); }
+        .project-group.enter-right { transform: translateX(40px); }
+
+        .group-label {
+            padding: 4rem 8% 0;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            text-transform: uppercase; letter-spacing: 0.25em; color: #999;
+            display: flex; align-items: center; gap: 1.5rem;
+        }
+        .group-label::before { content: ''; width: 24px; height: 1px; background: white; flex-shrink: 0; }
+        .group-desc { padding: 0.9rem 8% 0; max-width: 600px; font-size: 0.92rem; color: #555; line-height: 1.8; }
+
+        /* ── PROJECT LIST ────────────────────────────────── */
+        .project-list { padding: 0 8%; display: grid; grid-template-columns: repeat(2,1fr); gap: 0 4rem; }
+        .project-item {
+            display: flex; flex-direction: column; cursor: none; position: relative;
+            opacity: 0; transform: translateY(24px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .project-item.revealed { opacity: 1; transform: translateY(0); }
+        .project-item:hover { opacity: 0.55; transform: translateX(10px); }
+        .project-item.featured  { grid-column: span 2; padding: 7rem 0; border-bottom: 1px solid var(--border); }
+        .project-item.secondary { grid-column: span 1; padding: 4rem 0; border-bottom: 1px solid var(--border); }
+        .project-item.tertiary  { grid-column: span 1; padding: 2.5rem 0; border-bottom: 1px solid var(--border); }
+        /* Last odd secondary/tertiary spans full width */
+        .project-list .project-item.secondary:last-child:nth-child(odd),
+        .project-list .project-item.tertiary:last-child:nth-child(odd) { grid-column: span 2; }
+
+        .project-id { font-family: var(--font-mono); font-size: 0.65rem; color: #444; margin-bottom: 1.1rem; display: flex; align-items: center; gap: 1rem; }
+        .project-id::after { content: ''; height: 1px; flex-grow: 1; background: rgba(255,255,255,0.1); }
+        .project-title { font-weight: 800; letter-spacing: -0.03em; color: white; margin-bottom: 0.6rem; display: flex; align-items: baseline; gap: 0.6rem; }
+        .project-title::after { content: '→'; font-size: 0.55em; opacity: 0; transform: translateX(-8px); transition: 0.3s; display: inline-block; }
+        .project-item:hover .project-title::after { opacity: 0.5; transform: translateX(0); }
+        .featured  .project-title { font-size: clamp(3rem,6vw,6rem); }
+        .secondary .project-title { font-size: clamp(1.5rem,3vw,2.5rem); }
+        .tertiary  .project-title { font-size: clamp(1.1rem,1.8vw,1.6rem); }
+        .project-brief { color: var(--muted); line-height: 1.75; margin-bottom: 1.5rem; }
+        .featured  .project-brief { max-width: 560px; font-size: 1rem; }
+        .secondary .project-brief { max-width: 400px; font-size: 0.85rem; }
+        .tertiary  .project-brief { display: none; }
+        .project-tags { display: flex; gap: 0.8rem; flex-wrap: wrap; font-family: var(--font-mono); font-size: 0.62rem; color: #555; text-transform: uppercase; }
+
+        .wip-badge { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.18em; color: #884444; margin-bottom: 1.2rem; }
+        .wip-dot { width: 4px; height: 4px; border-radius: 50%; background: #883333; animation: wipPulse 2s infinite; }
+        @keyframes wipPulse { 0%,100%{opacity:0.8;} 50%{opacity:0.25;} }
+
+        /* ── PLANNING ────────────────────────────────────── */
+        .planning-group-inner { padding: 4rem 8% 5rem; }
+        .planning-header-row { display: flex; align-items: center; gap: 3rem; margin-bottom: 4rem; flex-wrap: wrap; }
+        .planning-legend { display: flex; gap: 2rem; font-family: var(--font-mono); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.15em; }
+        .legend-item { display: flex; align-items: center; gap: 8px; color: #666; }
+        .legend-dot { width: 4px; height: 4px; border-radius: 50%; }
+        .legend-dot.done   { background: var(--c-done); box-shadow: 0 0 8px var(--c-done); }
+        .legend-dot.schema { background: var(--c-schema); }
+        .legend-dot.tbd    { background: #333; }
+        .planning-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+        .plan-item {
+            padding: 2.5rem; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 1.2rem; position: relative; cursor: none;
+            opacity: 0; transform: translateY(16px); transition: var(--transition);
+        }
+        .plan-item.revealed-plan { opacity: 1; transform: translateY(0); }
+        .plan-item:not(.tbd):hover { background: #050505; }
+        .plan-item::before { content: ''; position: absolute; top: 0; left: 0; height: 2px; width: 0; transition: width 1s ease 0.3s; }
+        .plan-item.revealed-plan::before { width: 100%; }
+        .plan-item.done::before   { background: var(--c-done); }
+        .plan-item.schema::before { background: var(--c-schema); }
+        .plan-num { font-family: var(--font-mono); font-size: 0.65rem; color: #444; letter-spacing: 0.2em; }
+        .plan-status { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.15em; }
+        .plan-status-dot { width: 5px; height: 5px; border-radius: 50%; }
+        .plan-item.done   .plan-status { color: var(--c-done); }   .plan-item.done   .plan-status-dot { background: var(--c-done); box-shadow: 0 0 6px var(--c-done); }
+        .plan-item.schema .plan-status { color: var(--c-schema); } .plan-item.schema .plan-status-dot { background: var(--c-schema); }
+        .plan-item.tbd    .plan-status { color: #333; }            .plan-item.tbd    .plan-status-dot { background: #333; }
+        .plan-title { font-weight: 800; letter-spacing: -0.02em; font-size: 1.3rem; color: #333; transition: 0.3s; }
+        .plan-item:not(.tbd):hover .plan-title { color: white; }
+        .plan-bar-wrap { height: 1px; background: #111; margin-top: auto; }
+        .plan-bar { height: 1px; background: white; width: 0; transition: width 1.5s cubic-bezier(0.16,1,0.3,1) 0.5s; }
+
+        /* ── OVERLAY ─────────────────────────────────────── */
+        .overlay {
+            position: fixed; inset: 0; background: var(--bg); z-index: 2000;
+            overflow-y: auto; opacity: 0; pointer-events: none; transform: translateY(20px);
+            transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16,1,0.3,1);
+        }
+        .overlay.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+        .overlay-nav {
+            position: sticky; top: 0; z-index: 10; padding: 1.8rem 8%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.97); border-bottom: 1px solid var(--border);
+        }
+        .overlay-back { background: none; border: none; color: #777; font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.18em; cursor: none; display: flex; align-items: center; gap: 0.8rem; transition: color 0.2s; }
+        .overlay-back:hover { color: white; }
+        .overlay-label { font-family: var(--font-mono); font-size: 0.55rem; color: #333; text-transform: uppercase; letter-spacing: 0.2em; }
+
+        .case-header { max-width: 900px; padding: 5rem 8% 4rem; }
+        .case-header h2 { font-size: clamp(2.5rem,6vw,5rem); font-weight: 800; margin-bottom: 1.5rem; line-height: 1; letter-spacing: -0.03em; }
+        .case-desc { color: #aaa; font-size: 1.05rem; line-height: 1.85; max-width: 640px; }
+
+        .case-grid { display: grid; grid-template-columns: 280px 1fr; gap: 4rem; padding: 0 8% 6rem; }
+        .case-sidebar h4 { color: white; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.14em; margin-bottom: 0.9rem; margin-top: 2.2rem; }
+        .case-sidebar h4:first-child { margin-top: 0; }
+        .spec-tag { display: block; margin-bottom: 0.6rem; padding-left: 1rem; border-left: 1px solid rgba(255,255,255,0.12); font-size: 0.88rem; color: #aaa; }
+
+        .case-content {
+            background: var(--surface); border-radius: 6px; min-height: 580px;
+            display: flex; align-items: stretch; border: 1px solid var(--border); overflow: hidden;
+        }
+        .case-content iframe { width: 100%; height: 100%; min-height: 580px; border: none; }
+
+        /* SVG viewer */
+        .svg-viewer { width: 100%; padding: 2.5rem; display: flex; align-items: center; justify-content: center; background: #030304; }
+        .svg-viewer svg { width: 100%; height: auto; }
+        .svg-viewer img { width: 100%; max-height: 100%; object-fit: contain; }
+
+        /* Gallery */
+        .gallery-grid { width: 100%; padding: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 12px; overflow-y: auto; max-height: 580px; }
+        .gallery-grid.split { grid-template-columns: 1fr 1.5fr; }
+        .gallery-grid.split .gi:nth-child(1),.gallery-grid.split .gi:nth-child(2) { grid-column: 1; }
+        .gallery-grid.split .gi:nth-child(3) { grid-column: 2; grid-row: 1/span 2; display: flex; align-items: center; justify-content: center; }
+        .gallery-grid.split .gi:nth-child(3) img { max-height: 50vh; object-fit: contain; }
+        .gallery-grid.single { display: flex; align-items: center; justify-content: center; }
+        .gallery-grid.single .gi { width: 100%; }
+        .gallery-grid.single .gi img { max-height: 50vh; object-fit: contain; }
+        .gi { background: rgba(255,255,255,0.018); border: 1px solid var(--border); border-radius: 5px; padding: 10px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.2s; }
+        .gi:hover { border-color: rgba(255,255,255,0.18); }
+        .gi img { width: 100%; height: auto; border-radius: 3px; display: block; object-fit: contain; }
+        .gi-label { font-family: var(--font-mono); font-size: 0.55rem; color: #555; text-align: center; }
+
+        /* Schema placeholder */
+        .schema-ph { width: 100%; min-height: 580px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
+        .schema-ph i { font-size: 4rem; color: #111; }
+        .schema-ph p { font-family: var(--font-mono); font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.25em; color: #222; }
+
+        /* Carousel */
+        .carousel-wrap { position: relative; width: 100%; min-height: 580px; display: flex; flex-direction: column; }
+        .carousel-wrap iframe { flex: 1; width: 100%; min-height: 580px; border: none; }
+        .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.75); color: white; border: 1px solid rgba(255,255,255,0.1); width: 36px; height: 36px; border-radius: 50%; cursor: none; display: flex; align-items: center; justify-content: center; transition: 0.2s; z-index: 10; }
+        .carousel-btn:hover { background: white; color: black; }
+        .prev-btn { left: 14px; } .next-btn { right: 14px; }
+        .carousel-ind { position: absolute; bottom: 14px; background: rgba(0,0,0,0.9); color: #888; padding: 3px 14px; border-radius: 20px; font-family: var(--font-mono); font-size: 0.58rem; }
+
+        .btn-case { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 1rem; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; width: 100%; margin-top: 10px; transition: 0.2s; cursor: none; }
+        .btn-solid { background: white; color: black; }
+        .btn-solid:hover { opacity: 0.85; }
+        .btn-outline { background: transparent; color: #666; border: 1px solid var(--border); }
+        .btn-outline:hover { color: white; border-color: white; }
+
+        /* ── FOOTER ──────────────────────────────────────── */
+        footer { padding: 8rem 8%; text-align: center; border-top: 1px solid var(--border); }
+        .footer-logo { font-size: 6vw; font-weight: 800; color: #080808; letter-spacing: -0.04em; margin-bottom: 2rem; }
+        .social-links { display: flex; justify-content: center; gap: 4rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.2em; }
+        .social-links a { color: var(--muted); text-decoration: none; transition: 0.3s; cursor: none; }
+        .social-links a:hover { color: white; }
+
+        @media (max-width: 1000px) {
+            body { cursor: auto; } .cursor-ring { display: none; }
+            .project-list, .planning-grid { grid-template-columns: 1fr; }
+            .project-item.featured, .project-item.secondary, .project-item.tertiary { grid-column: span 1; padding: 3rem 0; }
+            .case-grid { grid-template-columns: 1fr; }
+            .hero-counter { display: none; }
+            .filter-bar { padding-left: 8%; overflow-x: auto; }
+            .filter-btn { white-space: nowrap; }
+            .logo-sticky { position: absolute; }
+            a,button,.project-item,.plan-item { cursor: pointer; }
+        }
+        /* ── ARC INTRO (description + schema) ───────────── */
+        .arc-intro {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            padding: 4rem 8% 0;
+            align-items: center;
+        }
+        .arc-intro-text { display: flex; flex-direction: column; gap: 0; }
+        .arc-intro-schema {
+            position: relative; cursor: none;
+            border: 1px solid var(--border); border-radius: 6px;
+            overflow: hidden; background: #030304;
+            transition: border-color 0.3s;
+        }
+        .arc-intro-schema:hover { border-color: rgba(255,255,255,0.25); }
+        .arc-intro-schema img { width: 100%; height: auto; display: block; padding: 1.5rem; }
+        .arc-schema-hint {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 0.7rem 1.2rem;
+            font-family: var(--font-mono); font-size: 0.55rem;
+            text-transform: uppercase; letter-spacing: 0.2em; color: #444;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            transition: color 0.2s;
+        }
+        .arc-intro-schema:hover .arc-schema-hint { color: #999; }
+
+        @media (max-width: 1000px) {
+            .arc-intro { grid-template-columns: 1fr; }
+        }
+
+        /* ── ARC INTRO ───────────────────────────────────── */
+        .arc-intro {
+            display: grid; grid-template-columns: 1fr 1.4fr;
+            gap: 3rem; padding: 1.2rem 8% 0; align-items: center;
+        }
+        .arc-schema-inline {
+            border: 1px solid var(--border); border-radius: 6px;
+            background: #030304; overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        .arc-schema-inline:hover { border-color: rgba(255,255,255,0.2); }
+        .arc-schema-inline svg { width: 100%; height: auto; display: block; padding: 1.5rem; }
+        .arc-schema-inline g[onclick] { cursor: pointer; transition: opacity 0.2s; }
+        .arc-schema-inline g[onclick]:hover rect { filter: brightness(1.3); }
+        .arc-schema-label {
+            padding: 0.6rem 1.2rem;
+            font-family: var(--font-mono); font-size: 0.52rem;
+            text-transform: uppercase; letter-spacing: 0.18em; color: #333;
+            border-top: 1px solid var(--border);
+        }
+        @media (max-width: 1000px) { .arc-intro { grid-template-columns: 1fr; } }
+
+    </style>
+</head>
+<body>
+
+<div class="cursor-ring"></div>
+<div class="logo-sticky">Y.Slimani</div>
+
+<nav>
+    <div class="nav-links">
+        <a href="#projects">Projets</a>
+        <a href="#" onclick="switchToPlanning(event)">Planning</a>
+        <a href="/cdn-cgi/l/email-protection#a0d9c1cec9d38ed3ccc9cdc1cec9e0c5d4d58ed3cfd2c2cfcecec58dd5cec9d6c5d2d3c9d4c58ec6d2">Contact</a>
+        <a href="#" onclick="openCV(event)">CV</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-counter" aria-hidden="true">
+        <strong>02</strong>
+        <span>Projets RTL</span>
+        <span>Majeurs</span>
+    </div>
+    <h2>Ingénierie des Systèmes Embarqués</h2>
+    <h1>Architecture<br>Numérique.</h1>
+    <div class="hero-sub">
+        <p>Conception de processeurs, traitement du signal et électronique de haute précision. Étudiant à Sorbonne Université.</p>
+        <div class="scroll-hint">
+            <div class="scroll-hint-line"></div>
+            <span>Scroll</span>
+        </div>
+    </div>
+</section>
+
+<!-- PROJECTS -->
+<div id="projects">
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="arc"        data-idx="0">ARC<span class="filter-count">06</span></button>
+        <button class="filter-btn"        data-filter="bolt"       data-idx="1">BOLT<span class="filter-count">03</span></button>
+        <button class="filter-btn"        data-filter="academique" data-idx="2">Académique<span class="filter-count">05</span></button>
+        <button class="filter-btn"        data-filter="planning"   data-idx="3">Planning<span class="filter-count">06</span></button>
+    </div>
+
+    <div class="groups-container">
+
+        <!-- ── ARC ─────────────────────────────────────── -->
+        <div class="project-group visible" data-group="arc" data-idx="0">
+            <div class="group-label">Projet ARC — Conception d'un SoC RISC 16 bits from scratch.</div>
+            <div class="arc-intro">
+                <div class="group-desc" style="padding:0">Projet de conception d'un système sur puce complet autour d'un cœur RISC 16 bits. L'objectif est de maîtriser l'intégration de plusieurs modules — traitement du signal, gestion mémoire, I/O — sur un bus interne unifié.</div>
+                <div class="arc-schema-inline" id="arcSchemaInline"></div>
+            </div>
+            <div class="project-list">
+                <div class="project-item featured" onclick="openCase('arc')">
+                    <span class="project-id">001 / ARC / VUE GLOBALE</span>
+                    <h3 class="project-title">ARC CORE</h3>
+                    <div class="wip-badge"><div class="wip-dot"></div>En développement</div>
+                    <p class="project-brief">Cœur de traitement RISC complet avec bus interne 16 bits et six modules périphériques intégrés. Architecture basse consommation conçue pour le temps réel.</p>
+                    <div class="project-tags"><span>VHDL</span><span>/</span><span>RISC</span><span>/</span><span>SoC</span></div>
+                </div>
+                <div class="project-item secondary" onclick="openCase('fir')">
+                    <span class="project-id">002 / ARC / DSP</span>
+                    <h3 class="project-title">Filtre FIR</h3>
+                    <p class="project-brief">Accélérateur hardware à réponse impulsionnelle finie. Architecture parallèle pour traitement temps réel.</p>
+                    <div class="project-tags"><span>DSP</span><span>/</span><span>VHDL</span></div>
+                </div>
+                <div class="project-item secondary" onclick="openCase('dma')">
+                    <span class="project-id">003 / ARC / DMA</span>
+                    <h3 class="project-title">DMA</h3>
+                    <p class="project-brief">Contrôleur d'accès direct mémoire. Transferts automatiques entre périphériques et mémoire.</p>
+                    <div class="project-tags"><span>VHDL</span><span>/</span><span>Bus</span></div>
+                </div>
+                <div class="project-item secondary" onclick="openCase('irq')">
+                    <span class="project-id">004 / ARC / IRQ</span>
+                    <h3 class="project-title">IRQ Controller</h3>
+                    <p class="project-brief">Gestionnaire d'interruptions matérielles. Arbitrage de priorité et routage vers le CPU Core.</p>
+                    <div class="project-tags"><span>VHDL</span><span>/</span><span>Interruptions</span></div>
+                </div>
+                <div class="project-item secondary" onclick="openCase('timer')">
+                    <span class="project-id">005 / ARC / TIMER · SPI</span>
+                    <h3 class="project-title">Timer · SPI</h3>
+                    <p class="project-brief">Module de cadence système et interface SPI pour convertisseurs ADC.</p>
+                    <div class="project-tags"><span>VHDL</span><span>/</span><span>SPI</span><span>/</span><span>ADC</span></div>
+                </div>
+                <div class="project-item secondary" onclick="openCase('gpio')">
+                    <span class="project-id">006 / ARC / GPIO</span>
+                    <h3 class="project-title">GPIO</h3>
+                    <p class="project-brief">Contrôleur I/O physiques memory-mappé sur le bus interne 16 bits.</p>
+                    <div class="project-tags"><span>VHDL</span><span>/</span><span>Memory-Map</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── BOLT ──────────────────────────────────────── -->
+        <div class="project-group" data-group="bolt" data-idx="1">
+            <div class="group-label">Bolt-16 — Architecture Personnelle & Toolchain.</div>
+            <div class="project-list">
+                <div class="project-item featured" onclick="openCase('bolt')">
+                    <span class="project-id">007 / PERSONNEL / CORE</span>
+                    <h3 class="project-title">BOLT-16</h3>
+                    <p class="project-brief">Conception intégrale 'From Scratch' d'une architecture 16 bits personnelle synthétisée sur Artix-7. De l'ISA au pipeline 3 étages.</p>
+                    <div class="project-tags"><span>VHDL</span><span>/</span><span>Vivado</span><span>/</span><span>RTL Design</span></div>
+                </div>
+                <div class="project-item secondary" onclick="openCase('compiler')">
+                    <span class="project-id">008 / PERSONNEL / SOFTWARE</span>
+                    <h3 class="project-title">Compilateur</h3>
+                    <p class="project-brief">Outil Python traduisant du pseudo-code ASM en binaire. Génère ROM.vhdl et bitstream UART.</p>
+                    <div class="project-tags"><span>Python</span><span>/</span><span>ASM</span><span>/</span><span>Toolchain</span></div>
+                </div>
+                <div class="project-item secondary" onclick="openCase('ml')">
+                    <span class="project-id">009 / PERSONNEL / AI</span>
+                    <h3 class="project-title">Deep Learning</h3>
+                    <p class="project-brief">Classification MNIST via CNN from scratch NumPy puis PyTorch. Visualisation des gradients.</p>
+                    <div class="project-tags"><span>Python</span><span>/</span><span>PyTorch</span><span>/</span><span>MNIST</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ACADÉMIQUE ──────────────────────────────────── -->
+        <div class="project-group" data-group="academique" data-idx="2">
+            <div class="group-label">Travaux Académiques — Sorbonne Université.</div>
+            <div class="project-list">
+                <div class="project-item secondary" onclick="openCase('fpga')">
+                    <span class="project-id">010 / ACADÉMIQUE / GRAPHICS</span>
+                    <h3 class="project-title">VGA Engine</h3>
+                    <div class="project-tags"><span>VHDL</span><span>/</span><span>VGA Sync</span><span>/</span><span>Basys 3</span></div>
+                </div>
+                <div class="project-item secondary" onclick="openCase('audio')">
+                    <span class="project-id">011 / ACADÉMIQUE / DSP</span>
+                    <h3 class="project-title">Console Mixage Audio</h3>
+                    <div class="project-tags"><span>Simulink</span><span>/</span><span>Filtres</span><span>/</span><span>DSP</span></div>
+                </div>
+                <div class="project-item tertiary" onclick="openCase('sensor')">
+                    <span class="project-id">012 / ACADÉMIQUE / INSTRUM</span>
+                    <h3 class="project-title">Capteur Cardiaque IR</h3>
+                    <div class="project-tags"><span>Analogique</span><span>/</span><span>IR</span></div>
+                </div>
+                <div class="project-item tertiary" onclick="openCase('ctn')">
+                    <span class="project-id">013 / ACADÉMIQUE / PCB</span>
+                    <h3 class="project-title">Flux Thermique CTN</h3>
+                    <div class="project-tags"><span>KiCad</span><span>/</span><span>PCB</span></div>
+                </div>
+                <div class="project-item tertiary" onclick="openCase('telecom')">
+                    <span class="project-id">014 / ACADÉMIQUE / RF</span>
+                    <h3 class="project-title">Transmission BPSK</h3>
+                    <div class="project-tags"><span>Matlab</span><span>/</span><span>RF</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── PLANNING ──────────────────────────────────── -->
+        <div class="project-group" data-group="planning" data-idx="3">
+            <div class="planning-group-inner">
+                <div class="planning-header-row">
+                    <div class="group-label" style="padding:0">Planning ARC — Roadmap Système</div>
+                    <div class="planning-legend">
+                        <div class="legend-item"><div class="legend-dot done"></div>Terminé</div>
+                        <div class="legend-item"><div class="legend-dot schema"></div>Schématisation</div>
+                        <div class="legend-item"><div class="legend-dot tbd"></div>Attente</div>
+                    </div>
+                </div>
+                <div class="planning-grid">
+                    <div class="plan-item done" onclick="openCase('fir')">
+                        <span class="plan-num">ARC / 002</span>
+                        <div class="plan-status"><div class="plan-status-dot"></div>Terminé</div>
+                        <h4 class="plan-title">Filtre FIR</h4>
+                        <div class="plan-bar-wrap"><div class="plan-bar" data-w="100"></div></div>
+                    </div>
+                    <div class="plan-item schema" onclick="openCase('arc')">
+                        <span class="plan-num">ARC / 001</span>
+                        <div class="plan-status"><div class="plan-status-dot"></div>Schématisation</div>
+                        <h4 class="plan-title">ARC Core CPU</h4>
+                        <div class="plan-bar-wrap"><div class="plan-bar" data-w="20"></div></div>
+                    </div>
+                    <div class="plan-item tbd">
+                        <span class="plan-num">ARC / 003</span>
+                        <div class="plan-status"><div class="plan-status-dot"></div>Non planifié</div>
+                        <h4 class="plan-title">DMA Unit</h4>
+                        <div class="plan-bar-wrap"><div class="plan-bar" data-w="0"></div></div>
+                    </div>
+                    <div class="plan-item tbd">
+                        <span class="plan-num">ARC / 004</span>
+                        <div class="plan-status"><div class="plan-status-dot"></div>Non planifié</div>
+                        <h4 class="plan-title">IRQ Controller</h4>
+                        <div class="plan-bar-wrap"><div class="plan-bar" data-w="0"></div></div>
+                    </div>
+                    <div class="plan-item tbd">
+                        <span class="plan-num">ARC / 005</span>
+                        <div class="plan-status"><div class="plan-status-dot"></div>Non planifié</div>
+                        <h4 class="plan-title">Timer · SPI</h4>
+                        <div class="plan-bar-wrap"><div class="plan-bar" data-w="0"></div></div>
+                    </div>
+                    <div class="plan-item tbd">
+                        <span class="plan-num">ARC / 006</span>
+                        <div class="plan-status"><div class="plan-status-dot"></div>Non planifié</div>
+                        <h4 class="plan-title">GPIO Module</h4>
+                        <div class="plan-bar-wrap"><div class="plan-bar" data-w="0"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<footer>
+    <div class="footer-logo">YANIS SLIMANI</div>
+    <div class="social-links">
+        <a href="https://linkedin.com/in/yanis-slimani-88371425b/" target="_blank">LinkedIn</a>
+        <a href="https://github.com/whyyanisss" target="_blank">GitHub</a>
+        <a href="/cdn-cgi/l/email-protection#6118000f08124f120d080c000f08210415144f120e13030e0f0f044c140f08170413120815044f0713">Email</a>
+    </div>
+</footer>
+
+<!-- OVERLAY -->
+<div id="caseOverlay" class="overlay">
+    <div class="overlay-nav">
+        <button class="overlay-back" onclick="closeCase()">← Retour</button>
+        <span class="overlay-label">Dossier Technique</span>
+    </div>
+    <div class="case-header">
+        <h2 id="caseTitle"></h2>
+        <p class="case-desc" id="caseDesc"></p>
+    </div>
+    <div class="case-grid">
+        <div class="case-sidebar">
+            <h4>Stack Technique</h4>
+            <div id="caseSkills"></div>
+            <h4>Architecture</h4>
+            <div id="caseSpecs"></div>
+            <div id="caseActions" style="margin-top:3rem"></div>
+        </div>
+        <div class="case-content" id="caseView"></div>
+    </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ── ARC INLINE SCHEMA ───────────────────────────────────────────────────────
+(function loadArcSchema() {
+    fetch('arc_core_big_picture.svg')
+        .then(r => r.text())
+        .then(svgText => {
+            const patched = svgText
+                .replace(/onclick="sendPrompt\('Détaille les étages internes du CPU ARC Core'\)"/g, 'onclick="openCase(\'arc\')"')
+                .replace(/onclick="sendPrompt\('Explique le filtre FIR dans ARC Core'\)"/g,          'onclick="openCase(\'fir\')"')
+                .replace(/onclick="sendPrompt\('Explique le DMA dans ARC Core'\)"/g,                 'onclick="openCase(\'dma\')"')
+                .replace(/onclick="sendPrompt\('Explique l IRQ controller dans ARC Core'\)"/g,       'onclick="openCase(\'irq\')"')
+                .replace(/onclick="sendPrompt\('Explique le Timer dans ARC Core'\)"/g,               'onclick="openCase(\'timer\')"')
+                .replace(/onclick="sendPrompt\('Explique le GPIO dans ARC Core'\)"/g,                'onclick="openCase(\'gpio\')"');
+
+            const container = document.getElementById('arcSchemaInline');
+            if (!container) return;
+            container.innerHTML = patched;
+
+            const svgEl = container.querySelector('svg');
+            if (svgEl) svgEl.style.cssText = 'width:100%;height:auto;display:block;padding:1.5rem;';
+
+            // Add cursor + hover effects on clickable groups
+            container.querySelectorAll('g[onclick]').forEach(g => {
+                g.style.cursor = 'pointer';
+                g.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+                g.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+            });
+
+            // Label
+            const label = document.createElement('div');
+            label.className = 'arc-schema-label';
+            label.textContent = 'Cliquez sur un module pour en voir le détail →';
+            container.appendChild(label);
+        })
+        .catch(() => {
+            const c = document.getElementById('arcSchemaInline');
+            if (c) c.innerHTML = '<div style="padding:2rem;font-family:var(--font-mono);font-size:0.55rem;color:#333;text-transform:uppercase;letter-spacing:0.2em">Schéma non disponible</div>';
+        });
+})();
+
+// ── CURSOR ─────────────────────────────────────────────────────────────────
+const ring = document.querySelector('.cursor-ring');
+let mx=0, my=0, rx=0, ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+(function update(){ rx+=(mx-rx)*0.22; ry+=(my-ry)*0.22; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(update); })();
+document.querySelectorAll('a, button, .project-item, .plan-item').forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+});
+
+// ── SCROLL REVEAL ───────────────────────────────────────────────────────────
+const revObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+        if (e.isIntersecting) {
+            const si = [...e.target.parentElement.children], idx = si.indexOf(e.target);
+            setTimeout(() => e.target.classList.add('revealed'), idx * 80);
+            revObs.unobserve(e.target);
+        }
+    });
+}, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+
+function observeItems() {
+    document.querySelectorAll('.project-item:not(.revealed)').forEach(el => revObs.observe(el));
+}
+
+// Immediately reveal items in visible group
+function revealGroup(group) {
+    group.querySelectorAll('.project-item').forEach((el, idx) => {
+        setTimeout(() => el.classList.add('revealed'), 200 + idx * 80);
+    });
+}
+revealGroup(document.querySelector('.project-group.visible'));
+observeItems();
+
+// ── FILTERS ─────────────────────────────────────────────────────────────────
+let currentIdx = 0;
+function switchGroup(targetFilter) {
+    const nextBtn = document.querySelector(`.filter-btn[data-filter="${targetFilter}"]`);
+    if (!nextBtn) return;
+    const nextIdx = parseInt(nextBtn.dataset.idx);
+
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    nextBtn.classList.add('active');
+
+    const current = document.querySelector('.project-group.visible');
+    const next    = document.querySelector(`.project-group[data-group="${targetFilter}"]`);
+    if (current === next) { currentIdx = nextIdx; return; }
+
+    const goRight = nextIdx > currentIdx;
+    current.classList.add(goRight ? 'exit-left' : 'exit-right');
+
+    setTimeout(() => {
+        current.classList.remove('visible', 'exit-left', 'exit-right');
+        next.classList.add(goRight ? 'enter-right' : 'enter-left');
+        next.classList.add('visible');
+
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            next.classList.remove('enter-left', 'enter-right');
+            next.querySelectorAll('.project-item').forEach(el => el.classList.remove('revealed'));
+            setTimeout(() => revealGroup(next), 50);
+
+            if (targetFilter === 'planning') {
+                next.querySelectorAll('.plan-item').forEach((el, idx) => {
+                    setTimeout(() => {
+                        el.classList.add('revealed-plan');
+                        const bar = el.querySelector('.plan-bar');
+                        if (bar) bar.style.width = bar.dataset.w + '%';
+                    }, idx * 100);
+                });
+            }
+        }));
+    }, 300);
+    currentIdx = nextIdx;
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.onclick = () => switchGroup(btn.dataset.filter);
+});
+
+function switchToPlanning(e) {
+    e.preventDefault();
+    document.getElementById('projects').scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => switchGroup('planning'), 400);
+}
+
+function openCV(e) {
+    e.preventDefault();
+    window.open('assets/SLIMANI_A1_CV.pdf', '_blank');
+}
+
+// ── DATA ────────────────────────────────────────────────────────────────────
+const projectsData = {
+    arc: {
+        title: "ARC Core CPU", breadcrumb: "ARC / Vue Globale",
+        desc: "Cœur de traitement RISC hautement optimisé pour l'écosystème ARC. L'accent est mis sur l'efficacité par cycle et la réduction de la latence, avec une interface bus haute vitesse.",
+        skills: ["VHDL","RISC","SoC"],
+        specs: ["Fetch · Decode · Execute","ALU · Registers · FSM","Bus interne 16 bits","6 modules périphériques"]
+    },
+    fir: {
+        title: "Filtre Numérique FIR", breadcrumb: "ARC / DSP",
+        desc: "Accélérateur hardware FIR intégré sur le bus ARC. Traitement du signal temps réel sans charge CPU, coefficients 16 bits en architecture parallèle.",
+        skills: ["VHDL","DSP","Vivado"],
+        specs: ["Coefficients 16 bits","Architecture parallèle","Latence minimale","Pipeline optimisé"]
+    },
+    dma: {
+        title: "DMA — Direct Memory Access", breadcrumb: "ARC / DMA",
+        desc: "Contrôleur de transfert direct mémoire. Déplacement de blocs entre mémoire et périphériques sur le bus 16 bits, sans mobiliser le CPU Core.",
+        skills: ["VHDL","Bus","Mémoire"],
+        specs: ["Transferts auto mémoire vers périphérique","Arbitrage bus 16 bits","Décharge CPU complète"]
+    },
+    irq: {
+        title: "IRQ Controller", breadcrumb: "ARC / IRQ",
+        desc: "Gestionnaire d'interruptions matérielles. Arbitrage de priorité entre sources d'interruption et routage vers le CPU Core.",
+        skills: ["VHDL","FSM","Interruptions"],
+        specs: ["Multi-sources","Arbitrage configurable","Machine à états finis"]
+    },
+    timer: {
+        title: "Timer · SPI", breadcrumb: "ARC / Timer",
+        desc: "Module double rôle : cadence système précise via Timer, et communication série synchrone avec convertisseurs ADC externes via SPI.",
+        skills: ["VHDL","SPI","ADC"],
+        specs: ["Cadence et base de temps","Interface SPI maitre","Lecture ADC externe"]
+    },
+    gpio: {
+        title: "GPIO — General Purpose I/O", breadcrumb: "ARC / GPIO",
+        desc: "Contrôleur d'entrées/sorties physiques memory-mappé sur le bus 16 bits. Interface entre la logique ARC et les signaux électriques externes.",
+        skills: ["VHDL","I/O","Memory-Map"],
+        specs: ["Broches configurables E/S","Memory-mapped bus 16 bits","Lecture/ecriture registres"]
+    },
+    bolt: {
+        title: "Processeur BOLT-16", breadcrumb: "BOLT / Core",
+        desc: "Le projet BOLT-16 est la conception intégrale 'From Scratch' d'une architecture de microprocesseur 16 bits. L'objectif était de maîtriser le cycle complet de conception numérique : définition de l'ISA, implémentation RTL en VHDL, synthèse et déploiement sur FPGA Artix-7.",
+        skills: ["VHDL","Vivado","Assembly"],
+        specs: ["ALU 16 bits (Add, Sub, Mult, Logique, Shift)","Bootloader et communication UART pour le téléchargement de code machine (9600 Bauds)","Memory-Mapped GPIO (Adresses xFFE & xFFF)","Architecture totalement personnelle conçue de zéro","Pipeline 3 étages"],
+        github: "https://github.com/whyyanisss/Projet_Bolt_uprocesseur.git",
+        pdf: "assets/Bolt16_Datasheet.pdf"
+    },
+    compiler: {
+        title: "Compilateur BOLT-ASM", breadcrumb: "BOLT / Toolchain",
+        desc: "Outil développé en Python pour le microprocesseur BOLT-16. Il traduit un pseudo-code assembleur lisible en binaire machine, permettant de programmer le processeur sans écrire directement en hexadécimal.",
+        skills: ["Python","ASM","Toolchain"],
+        specs: ["Traduction Pseudo-code vers Binaire","Generation d'un fichier ROM.vhdl et .txt pour Vivado","Bitstream compatible avec la communication UART du bootloader"],
+        github: "https://github.com/whyyanisss/Compilateur-pseudo-asm.git",
+        gallery: [{ src:'assets/Compilateur.png', label:'Environnement de développement Python (VS Code / Cursor)' }], galleryLayout: 'single'
+    },
+    ml: {
+        title: "Deep Learning Lab", breadcrumb: "BOLT / AI",
+        desc: "Projet d'exploration approfondie des réseaux de neurones. Implémentation complète de l'algorithme de rétropropagation (Backpropagation) sans librairie, puis création d'un modèle de reconnaissance de chiffres manuscrits (MNIST) avec PyTorch. Visualisation des frontières de décision et interface Web pour tester le modèle.",
+        skills: ["Python","PyTorch","NumPy"],
+        specs: ["Réseau de neurones 'From Scratch' (NumPy)","Reconnaissance de chiffres manuscrits (MNIST)","Modèle PyTorch optimisé — précision > 99%","Visualisation des frontières de décision"],
+        github: "https://github.com/whyyanisss/MachineLearning-others.git",
+        pdf: "assets/Report-ML.pdf"
+    },
+    fpga: {
+        title: "VGA Engine FPGA", breadcrumb: "Académique / Graphics",
+        desc: "Conception de modules en VHDL d'une console de jeu vidéo sur carte FPGA Basys 3. L'objectif était de maîtriser la synthèse de design et l'implémentation de code dans un projet préconçu, avec gestion des timings VGA et logique de jeu par machine à états.",
+        skills: ["VHDL","FPGA","VGA"],
+        specs: ["Gestion de diviseurs d'horloge pour les différents blocs du projet","Gestion de l'IP Rotary Encoder avec une machine à états finis","Machine à états finis pour la logique de jeu","Validation par Testbench des différents blocs du projet","640×480 @ 60 Hz"],
+        github: "https://github.com/whyyanisss/Console-Video-sur-FPGA.git",
+        gallery: [
+            { src:'assets/SIMU_MODE_FPGA.png', label:'Chronogrammes de Simulation Vivado' },
+            { src:'assets/FPGA_shematic.png', label:'Schéma RTL Vivado' },
+            { src:'assets/FPGA_JEU.jpg', label:'Montage Réel sur Basys 3' }
+        ], galleryLayout: 'split'
+    },
+    audio: {
+        title: "Console Mixage Audio", breadcrumb: "Académique / DSP",
+        desc: "Conception et réalisation d'une table de mixage audio analogique et numérique. Simulation Simulink des effets audio et réalisation physique de l'étage d'amplification pour la restitution du signal sur haut-parleur.",
+        skills: ["Simulink","Matlab","DSP"],
+        specs: ["Égaliseur multi-bande (Graves, Médiums, Aigus)","Effets DSP : Écho, Réverbération, Saturation","Chaîne d'amplification analogique de puissance pour le haut-parleur"],
+        gallery: [
+            { src:'assets/Dashborad.png', label:'Dashboard Global' },
+            { src:'assets/Effects_vue_gen.png', label:"Chaîne d'Effets" },
+            { src:'assets/Equaliser_vue_gen.png', label:'Égaliseur' },
+            { src:'assets/ECHO.png', label:'Module Écho' },
+            { src:'assets/Reverb.png', label:'Module Réverbération' },
+            { src:'assets/Saturation.png', label:'Module Saturation' },
+            { src:'assets/Equaliser_banc_filtre.png', label:'Banc de Filtres' },
+            { src:'assets/Equaliser_Banc_gain.png', label:'Banc de Gain' }
+        ]
+    },
+    sensor: {
+        title: "Capteur Cardiaque IR", breadcrumb: "Académique / Instrumentation",
+        desc: "Système complet de mesure de la fréquence cardiaque par infrarouge. L'objectif était de maîtriser la conception d'un système allant de l'acquisition analogique du signal à son traitement numérique par portes logiques et son affichage sur afficheur 7 segments.",
+        skills: ["Instrumentation","Analogique","Cadence"],
+        specs: ["Conditionnement Analogique : Filtrage actif","Comparateur à hystérésis","Affichage dynamique 7 segments","Plage 0–99 BPM"],
+        gallery: [
+            { src:'assets/FREQ_shema.png', label:'Schéma de conditionnement analogique (Cadence)' },
+            { src:'assets/FREQ_NUM.png', label:'Schéma logique et affichage (Cadence)' },
+            { src:'assets/FREQ.jpeg', label:'Prototype sur Breadboard avec affichage' }
+        ], galleryLayout: 'split'
+    },
+    ctn: {
+        title: "Flux Thermique CTN", breadcrumb: "Académique / PCB",
+        desc: "Projet de conception d'un capteur de flux dans une soupape. Utilisation de deux thermistances CTN en pont de mesure pour détecter un flux thermique, avec amplification d'instrumentation et affichage numérique.",
+        skills: ["KiCad","PCB","Analogique"],
+        specs: ["Capteur : Thermistance CTN","Conditionnement : Pont de Wheatstone","Amplification d'Instrumentation","Conversion Analogique → Numérique avec CAN Flash 8 bits","Affichage sur 7 segments et LED"],
+        files: ["assets/project shema_CTN.pdf","assets/Mini_Projet-last_CTN.pdf"],
+        fileLabels: ["Schéma Électronique (KiCad)","Rapport Complet & Mesures"]
+    },
+    telecom: {
+        title: "Transmission RF BPSK", breadcrumb: "Académique / RF",
+        desc: "Simulation complète d'une chaîne de transmission numérique BPSK sous Matlab. Modélisation du signal en bande de base, modulation BPSK, transposition sur porteuse RF (1 MHz) et ajout de bruit gaussien AWGN. L'objectif était d'analyser la robustesse de la transmission via le tracé du BER en fonction du SNR.",
+        skills: ["Matlab","Télécoms","RF"],
+        specs: ["Génération et encodage BPSK du message binaire","Transposition RF à 1 MHz et analyse spectrale (FFT)","Simulation de canal bruité avec bruit AWGN","Démodulation cohérente et restitution du signal","Analyse des performances : courbe BER vs SNR"],
+        pdf: "assets/Projet_Telecom.pdf"
+    }
+};
+
+// ── RENDER HELPERS ───────────────────────────────────────────────────────────
+let cFiles=[], cLabels=[], cIdx=0;
+
+function renderCarousel() {
+    const v = document.getElementById('caseView');
+    v.innerHTML = ''; v.className = 'case-content';
+    const wrap = document.createElement('div'); wrap.className = 'carousel-wrap';
+    const iframe = document.createElement('iframe'); iframe.src = cFiles[cIdx];
+    wrap.appendChild(iframe);
+    if (cFiles.length > 1) {
+        const prev = document.createElement('button'); prev.className = 'carousel-btn prev-btn';
+        prev.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+        prev.onclick = () => { cIdx = (cIdx - 1 + cFiles.length) % cFiles.length; renderCarousel(); };
+        const next = document.createElement('button'); next.className = 'carousel-btn next-btn';
+        next.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+        next.onclick = () => { cIdx = (cIdx + 1) % cFiles.length; renderCarousel(); };
+        const ind = document.createElement('div'); ind.className = 'carousel-ind';
+        ind.innerText = `${cIdx+1} / ${cFiles.length}${cLabels[cIdx] ? ' — ' + cLabels[cIdx] : ''}`;
+        wrap.appendChild(prev); wrap.appendChild(next); wrap.appendChild(ind);
+    }
+    v.appendChild(wrap);
+}
+
+function renderGallery(images, layout) {
+    const v = document.getElementById('caseView');
+    v.innerHTML = ''; v.className = 'case-content';
+    const grid = document.createElement('div'); grid.className = 'gallery-grid';
+    if (layout === 'split') grid.classList.add('split');
+    else if (layout === 'single' || images.length === 1) grid.classList.add('single');
+    images.forEach(img => {
+        const item = document.createElement('div'); item.className = 'gi';
+        const a = document.createElement('a'); a.href = img.src; a.target = '_blank';
+        const image = document.createElement('img'); image.src = img.src;
+        const lbl = document.createElement('div'); lbl.className = 'gi-label'; lbl.innerText = img.label;
+        a.appendChild(image); item.appendChild(a); item.appendChild(lbl); grid.appendChild(item);
+    });
+    v.appendChild(grid);
+}
+
+function renderSVG(src) {
+    const v = document.getElementById('caseView');
+    v.innerHTML = ''; v.className = 'case-content';
+    fetch(src).then(r => r.text()).then(svgText => {
+        const patched = svgText
+            .replace(/onclick="sendPrompt\('Détaille les étages internes du CPU ARC Core'\)"/g, 'onclick="openCase(\'arc\')" style="cursor:pointer"')
+            .replace(/onclick="sendPrompt\('Explique le filtre FIR dans ARC Core'\)"/g, 'onclick="openCase(\'fir\')" style="cursor:pointer"')
+            .replace(/onclick="sendPrompt\('Explique le DMA dans ARC Core'\)"/g, 'onclick="openCase(\'dma\')" style="cursor:pointer"')
+            .replace(/onclick="sendPrompt\('Explique l IRQ controller dans ARC Core'\)"/g, 'onclick="openCase(\'irq\')" style="cursor:pointer"')
+            .replace(/onclick="sendPrompt\('Explique le Timer dans ARC Core'\)"/g, 'onclick="openCase(\'timer\')" style="cursor:pointer"')
+            .replace(/onclick="sendPrompt\('Explique le GPIO dans ARC Core'\)"/g, 'onclick="openCase(\'gpio\')" style="cursor:pointer"');
+        const wrap = document.createElement('div'); wrap.className = 'svg-viewer';
+        wrap.innerHTML = patched;
+        const svgEl = wrap.querySelector('svg');
+        if (svgEl) {
+            svgEl.style.cssText = 'width:100%;height:auto;';
+            svgEl.querySelectorAll('g[onclick]').forEach(g => {
+                g.style.cursor = 'pointer';
+                g.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+                g.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+            });
+        }
+        v.appendChild(wrap);
+    }).catch(() => {
+        const wrap = document.createElement('div'); wrap.className = 'svg-viewer';
+        const img = document.createElement('img'); img.src = src;
+        wrap.appendChild(img); v.appendChild(wrap);
+    });
+}
+
+// ── OPEN / CLOSE ─────────────────────────────────────────────────────────────
+function openCase(id) {
+    const p = projectsData[id]; if (!p) return;
+    document.getElementById('caseTitle').innerText = p.title;
+    document.getElementById('caseDesc').innerText  = p.desc;
+    document.getElementById('caseSkills').innerHTML = p.skills.map(s => `<span class="spec-tag">${s}</span>`).join('');
+    document.getElementById('caseSpecs').innerHTML  = p.specs.map(s  => `<span class="spec-tag">${s}</span>`).join('');
+
+    const actions = document.getElementById('caseActions');
+    actions.innerHTML = '';
+    if (p.github) actions.innerHTML += `<a href="${p.github}" target="_blank" class="btn-case btn-outline"><i class="fab fa-github"></i> Code Source</a>`;
+    if (p.pdf)    actions.innerHTML += `<a href="${p.pdf}"    target="_blank" class="btn-case btn-solid"><i class="fas fa-file-pdf"></i> Voir le Dossier</a>`;
+
+    const v = document.getElementById('caseView');
+    v.innerHTML = ''; v.className = 'case-content';
+
+    if (p.svg) {
+        renderSVG(p.svg);
+    } else if (p.gallery) {
+        renderGallery(p.gallery, p.galleryLayout);
+    } else if (p.files && p.files.length) {
+        cFiles = p.files; cLabels = p.fileLabels || []; cIdx = 0; renderCarousel();
+    } else if (p.pdf) {
+        cFiles = [p.pdf]; cLabels = []; cIdx = 0; renderCarousel();
+    } else {
+        v.innerHTML = `<div class="schema-ph"><i class="fas fa-microchip"></i><p>Archive protégée</p></div>`;
+    }
+
+    const overlay = document.getElementById('caseOverlay');
+    overlay.classList.add('active');
+    overlay.scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCase() {
+    document.getElementById('caseOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+    setTimeout(() => { document.getElementById('caseView').innerHTML = ''; }, 380);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCase(); });
+</script>
+</body>
+</html>
